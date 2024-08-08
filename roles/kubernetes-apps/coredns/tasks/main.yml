@@ -1,0 +1,46 @@
+---
+- name: CoreDNS | Lay Down CoreDNS
+  import_tasks: "coredns.yml"
+  run_once: true
+  when:
+    - dns_mode in ['coredns', 'coredns_dual']
+    - inventory_hostname == groups['kube_control_plane'][0]
+  tags:
+    - coredns
+
+- name: CoreDNS | Lay Down nodelocalDNS
+  import_tasks: "nodelocaldns.yml"
+  run_once: true
+  when:
+    - enable_nodelocaldns
+    - inventory_hostname == groups['kube_control_plane'] | first
+  tags:
+    - nodelocaldns
+
+- name: CoreDNS | Start Resources
+  kube:
+    name: "{{ item.item.name }}"
+    namespace: "kube-system"
+    kubectl: "{{ bin_dir }}/kubectl"
+    resource: "{{ item.item.type }}"
+    filename: "{{ kube_config_dir }}/{{ item.item.file }}"
+    state: "latest"
+  with_items:
+    - "{{ coredns_manifests.results | default({}) }}"
+    - "{{ coredns_secondary_manifests.results | default({}) }}"
+    - "{{ nodelocaldns_manifests.results | default({}) }}"
+    - "{{ nodelocaldns_second_manifests.results | default({}) }}"
+  run_once: true
+  when:
+    - dns_mode != 'none'
+    - inventory_hostname == groups['kube_control_plane'][0]
+    - not item is skipped
+  register: resource_result
+  until: resource_result is succeeded
+  retries: 4
+  delay: 5
+  tags:
+    - coredns
+    - nodelocaldns
+  loop_control:
+    label: "{{ item.item.file }}"

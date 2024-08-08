@@ -1,5 +1,6 @@
 ---
 
+custom_cni_preflight_roles: []
 custom_cni_preflight_templates: []
 
 custom_cni_manifests: []

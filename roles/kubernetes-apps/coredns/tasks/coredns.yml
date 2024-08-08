@@ -1,5 +1,5 @@
 ---
-- name: Kubernetes Apps | Lay Down CoreDNS templates
+- name: CoreDNS | Lay Down CoreDNS templates
   template:
     src: "{{ item.file }}.j2"
     dest: "{{ kube_config_dir }}/{{ item.file }}"
@@ -19,6 +19,7 @@
   register: coredns_manifests
   vars:
     clusterIP: "{{ skydns_server }}"
+  run_once: true
   when:
     - dns_mode in ['coredns', 'coredns_dual']
     - inventory_hostname == groups['kube_control_plane'][0]
@@ -27,7 +28,7 @@
   tags:
     - coredns
 
-- name: Kubernetes Apps | Lay Down Secondary CoreDNS Template
+- name: CoreDNS | Lay Down Secondary CoreDNS Template
   template:
     src: "{{ item.src }}.j2"
     dest: "{{ kube_config_dir }}/{{ item.file }}"
@@ -41,6 +42,7 @@
   vars:
     clusterIP: "{{ skydns_server_secondary }}"
     coredns_ordinal_suffix: "-secondary"
+  run_once: true
   when:
     - dns_mode == 'coredns_dual'
     - inventory_hostname == groups['kube_control_plane'][0]

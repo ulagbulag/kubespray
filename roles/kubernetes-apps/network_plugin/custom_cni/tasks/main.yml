@@ -1,0 +1,8 @@
+---
+- name: Custom CNI | Preflight | Start Roles
+  include_role:
+    name: "{{ custom_cni_preflight_role }}"
+  loop: "{{ custom_cni_preflight_roles }}"
+  loop_control:
+    loop_var: custom_cni_preflight_role
+  run_once: true
